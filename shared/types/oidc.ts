@@ -1,3 +1,5 @@
+import { CamelCasedProperties } from "./common";
+
 export type ResponseTypesSupported =
   | "code"
   | "id_token"
@@ -31,4 +33,8 @@ export type DiscoveryDocument = {
   token_endpoint_auth_methods_supported: TokenEndpointAuthMethodSupported[];
   claims_supported?: ClaimsSupported[];
   code_challenge_methods_supported?: CodeChallengeMethodsSupported[];
+};
+
+export type OIDCProvider = CamelCasedProperties<DiscoveryDocument> & {
+  requirePCKCE?: boolean;
 };
