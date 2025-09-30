@@ -1,0 +1,41 @@
+# This configuration is intended for development and testing purposes only.
+# It is not designed or recommended for production use. The goal of this setup is to help you get started quickly.
+# For production deployments, please review and apply the necessary security, performance, and scalability best practices.
+
+services:
+  app:
+    build: .
+    container_name: my-app #TODO: replace with you app name
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://my-app:3000/api/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  db:
+    image: postgres:15-alpine
+    container_name: my-app-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  db_data:

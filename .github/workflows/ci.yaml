@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    name: Commitlint
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install commitlint
+        run: pnpm install -D @commitlint/cli @commitlint/config-conventional
+
+      - name: Print versions
+        run: |
+          git --version
+          node --version
+          pnpm --version
+          pnpm dlx commitlint --version
+
+      - name: Validate last commit (push)
+        if: github.event_name == 'push'
+        run: pnpm dlx commitlint --last --verbose
+
+      - name: Validate PR commits
+        if: github.event_name == 'pull_request'
+        run: pnpm dlx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test
+        env:
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          DB_USER: "test"
+          DB_PASS: "test"
+          DB_NAME: "test"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results.xml
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run linting
+        run: pnpm lint
+
+  build:
+    needs: [commitlint, test, lint]
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm build
+        env:
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          DB_USER: "test"
+          DB_PASS: "test"
+          DB_NAME: "test"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            dist/
+            .next/
+            build/
+          retention-days: 7
+
+  playwright:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Playwright Tests
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
