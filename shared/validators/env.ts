@@ -3,7 +3,8 @@ import z from "zod";
 // zod validation schemas
 export const EnvSchema = z.object({
   // Add environment variables here...
-  APP_HOST: z.url(),
+  BETTER_AUTH_URL: z.url(),
+  BETTER_AUTH_SECRET: z.string(),
   DB_HOST: z.string(),
   DB_PORT: z.coerce.number(),
   DB_USER: z.string(),
