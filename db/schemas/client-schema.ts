@@ -17,7 +17,9 @@ export const relyingParties = pgTable(
      * Human-readable name for consent screens
      */
     name: varchar("client_name").unique().notNull(),
+
     description: varchar("client_description"),
+
     secret: text("client_secret").unique().notNull(),
 
     /**
@@ -93,6 +95,7 @@ export const relyingParties = pgTable(
     subjectType: varchar("subject_type").$type<SubjectTypesSupported>().default("public"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull()
