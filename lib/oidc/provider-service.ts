@@ -238,7 +238,7 @@ export class ProviderService {
   }
 
   private validateSupportedScopes(scopes: unknown) {
-    const name = "scopes_supported";
+    const name: keyof DiscoveryDocument = "scopes_supported";
 
     if (!Array.isArray(scopes)) {
       throw new OIDCError({
@@ -254,7 +254,7 @@ export class ProviderService {
   }
 
   private validateResponseTypesSupported(responseTypes: unknown) {
-    const name = "response_types_supported";
+    const name: keyof DiscoveryDocument = "response_types_supported";
 
     if (!Array.isArray(responseTypes) || responseTypes.length === 0) {
       throw new OIDCError({
@@ -271,7 +271,7 @@ export class ProviderService {
   }
 
   private validateSubjectTypesSupported(subjectTypes: unknown) {
-    const name = "subject_types_supported";
+    const name: keyof DiscoveryDocument = "subject_types_supported";
 
     if (!Array.isArray(subjectTypes) || subjectTypes.length === 0) {
       throw new OIDCError({
@@ -288,7 +288,7 @@ export class ProviderService {
   }
 
   private validateIdTokenSigningAlgValuesSupported(algs: unknown) {
-    const name = "id_token_signing_alg_values_supported";
+    const name: keyof DiscoveryDocument = "id_token_signing_alg_values_supported";
 
     if (!Array.isArray(algs) || algs.length === 0) {
       throw new OIDCError({
@@ -305,7 +305,7 @@ export class ProviderService {
   }
 
   public validateResponseModesSupported(modes: unknown) {
-    const name = "response_modes_supported";
+    const name: keyof DiscoveryDocument = "response_modes_supported";
 
     if (!Array.isArray(modes) || modes.length === 0) {
       throw new OIDCError({
@@ -321,7 +321,7 @@ export class ProviderService {
   }
 
   private validateGranTypesSupported(grantTypes: unknown) {
-    const name = "grant_types_supported";
+    const name: keyof DiscoveryDocument = "grant_types_supported";
 
     if (!Array.isArray(grantTypes) || grantTypes.length === 0) {
       throw new OIDCError({
@@ -337,7 +337,7 @@ export class ProviderService {
   }
 
   private validateTokenEndpointAuthMethodsSupported(methods: unknown) {
-    const name = "token_endpoint_auth_methods_supported";
+    const name: keyof DiscoveryDocument = "token_endpoint_auth_methods_supported";
 
     if (!Array.isArray(methods) || methods.length === 0) {
       throw new OIDCError({
@@ -353,7 +353,7 @@ export class ProviderService {
   }
 
   private validateClaimsSupported(claims: unknown) {
-    const name = "claims_supported";
+    const name: keyof DiscoveryDocument = "claims_supported";
 
     if (!Array.isArray(claims) || claims.length === 0) {
       throw new OIDCError({
