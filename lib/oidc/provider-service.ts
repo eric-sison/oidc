@@ -238,119 +238,135 @@ export class ProviderService {
   }
 
   private validateSupportedScopes(scopes: unknown) {
+    const name = "scopes_supported";
+
     if (!Array.isArray(scopes)) {
       throw new OIDCError({
         error: "invalid_scope",
-        error_description: "scopes_supported must be an array of strings",
+        error_description: `${name} must be an array of strings`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("scopes_supported", scopes);
-    this.ensureIncludes("scopes_suported", scopes, ["openid"]);
-    this.ensureNoDuplicates("scopes_supported", scopes);
+    this.ensureNoNonEmptyStrings(name, scopes);
+    this.ensureIncludes(name, scopes, ["openid"]);
+    this.ensureNoDuplicates(name, scopes);
   }
 
   private validateResponseTypesSupported(responseTypes: unknown) {
+    const name = "response_types_supported";
+
     if (!Array.isArray(responseTypes) || responseTypes.length === 0) {
       throw new OIDCError({
         error: "unsupported_response_type",
-        error_description: "response_types_supported must not be empty",
+        error_description: `${name} must not be empty`,
         status_code: 400,
       });
     }
 
     const normalized = responseTypes.map((rt) => normalizeResponseType(rt));
-    this.ensureNoNonEmptyStrings("response_types_supported", normalized);
-    this.ensureNoDuplicates("response_types_supported", normalized);
-    this.ensureAllowedValuesOnly("response_types_supported", normalized, [...RESPONSE_TYPES]);
+    this.ensureNoNonEmptyStrings(name, normalized);
+    this.ensureNoDuplicates(name, normalized);
+    this.ensureAllowedValuesOnly(name, normalized, [...RESPONSE_TYPES]);
   }
 
   private validateSubjectTypesSupported(subjectTypes: unknown) {
+    const name = "subject_types_supported";
+
     if (!Array.isArray(subjectTypes) || subjectTypes.length === 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: "subject_types_supported must not be empty",
+        error_description: `${name} must not be empty`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("subject_types_supported", subjectTypes);
-    this.ensureIncludes("subject_types_supported", subjectTypes, ["public"]);
-    this.ensureAllowedValuesOnly("subject_types_supported", subjectTypes, [...SUBJECT_TYPES]);
-    this.ensureNoDuplicates("subject_types_supported", subjectTypes);
+    this.ensureNoNonEmptyStrings(name, subjectTypes);
+    this.ensureIncludes(name, subjectTypes, ["public"]);
+    this.ensureAllowedValuesOnly(name, subjectTypes, [...SUBJECT_TYPES]);
+    this.ensureNoDuplicates(name, subjectTypes);
   }
 
   private validateIdTokenSigningAlgValuesSupported(algs: unknown) {
+    const name = "id_token_signing_alg_values_supported";
+
     if (!Array.isArray(algs) || algs.length === 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: "id_token_signing_alg_values_supported must not be empty",
+        error_description: `${name} must not be empty`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("id_token_signing_values_supported", algs);
-    this.ensureIncludes("id_token_signing_values_supported", algs, ["RS256"]);
-    this.ensureAllowedValuesOnly("id_token_signing_values_supported", algs, [...ID_TOKEN_SIGNING_ALGS]);
-    this.ensureNoDuplicates("id_token_signing_alg_values_supported", algs);
+    this.ensureNoNonEmptyStrings(name, algs);
+    this.ensureIncludes(name, algs, ["RS256"]);
+    this.ensureAllowedValuesOnly(name, algs, [...ID_TOKEN_SIGNING_ALGS]);
+    this.ensureNoDuplicates(name, algs);
   }
 
   public validateResponseModesSupported(modes: unknown) {
+    const name = "response_modes_supported";
+
     if (!Array.isArray(modes) || modes.length === 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: "response_modes_supported must not be empty if present",
+        error_description: `${name} must not be empty if present`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("response_modes_supported", modes);
-    this.ensureAllowedValuesOnly("response_modes_supported", modes, [...RESPONSE_MODES]);
-    this.ensureNoDuplicates("response_modes_supported", modes);
+    this.ensureNoNonEmptyStrings(name, modes);
+    this.ensureAllowedValuesOnly(name, modes, [...RESPONSE_MODES]);
+    this.ensureNoDuplicates(name, modes);
   }
 
   private validateGranTypesSupported(grantTypes: unknown) {
+    const name = "grant_types_supported";
+
     if (!Array.isArray(grantTypes) || grantTypes.length === 0) {
       throw new OIDCError({
         error: "unsupported_grant_type",
-        error_description: "grant_types_supported must not be empty if present",
+        error_description: `${name} must not be empty if present`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("grant_types_supported", grantTypes);
-    this.ensureAllowedValuesOnly("grant_types_supported", grantTypes, [...STANDARD_GRANT_TYPES]);
-    this.ensureNoDuplicates("grant_types_supported", grantTypes);
+    this.ensureNoNonEmptyStrings(name, grantTypes);
+    this.ensureAllowedValuesOnly(name, grantTypes, [...STANDARD_GRANT_TYPES]);
+    this.ensureNoDuplicates(name, grantTypes);
   }
 
   private validateTokenEndpointAuthMethodsSupported(methods: unknown) {
+    const name = "token_endpoint_auth_methods_supported";
+
     if (!Array.isArray(methods) || methods.length === 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: "token_endpoint_auth_methods_supported must not be empty if present",
+        error_description: `${name} must not be empty if present`,
         status_code: 400,
       });
     }
 
-    this.ensureNoNonEmptyStrings("token_endpoint_auth_methods_supported", methods);
-    this.ensureAllowedValuesOnly("token_endpoint_auth_methods_supported", methods, [...TOKEN_AUTH_METHODS]);
-    this.ensureNoDuplicates("token_endpoint_auth_methods_supported", methods);
+    this.ensureNoNonEmptyStrings(name, methods);
+    this.ensureAllowedValuesOnly(name, methods, [...TOKEN_AUTH_METHODS]);
+    this.ensureNoDuplicates(name, methods);
   }
 
   private validateClaimsSupported(claims: unknown) {
+    const name = "claims_supported";
+
     if (!Array.isArray(claims) || claims.length === 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: "claims_supported must not be empty if present",
+        error_description: `${name} must not be empty if present`,
         status_code: 400,
       });
     }
 
-    this.ensureIncludes("claims_supported", claims, ["sub"]);
-    this.ensureNoNonEmptyStrings("claims_supported", claims);
-    this.ensureAllowedValuesOnly("claims_supported", claims, [...CLAIMS_SUPPORTED]);
-    this.ensureNoDuplicates("claims_supported", claims);
+    this.ensureIncludes(name, claims, ["sub"]);
+    this.ensureNoNonEmptyStrings(name, claims);
+    this.ensureAllowedValuesOnly(name, claims, [...CLAIMS_SUPPORTED]);
+    this.ensureNoDuplicates(name, claims);
   }
 
   private validateCodeChallengeMethods(methods: unknown) {
