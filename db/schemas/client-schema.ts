@@ -1,12 +1,7 @@
-import {
-  GrantTypesSupported,
-  ResponseTypesSupported,
-  ScopesSupported,
-  SubjectTypesSupported,
-  TokenEndpointAuthMethodSupported,
-} from "@/shared/types/oidc";
+import { GrantTypesSupported, ResponseTypesSupported, ScopesSupported } from "@/shared/types/oidc";
 import { jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
+import z from "zod";
 
 export const relyingParties = pgTable(
   "relying_parties",
@@ -48,9 +43,7 @@ export const relyingParties = pgTable(
      * One of: `client_secret_basic` (default), `client_secret_post`, `none`.
      * @type TokenEndpointAuthMethodSupported
      */
-    tokenEndpointAuthMethod: varchar("token_endpoint_auth_methods")
-      .$type<TokenEndpointAuthMethodSupported>()
-      .notNull(),
+    tokenEndpointAuthMethod: varchar("token_endpoint_auth_methods").default("client_secret_basic").notNull(),
 
     /**
      * URL for client homepage
@@ -92,7 +85,7 @@ export const relyingParties = pgTable(
      * `public` (same sub for all RPs) or `pairwise` (per-sector unique sub). Default: `public`
      * @type SubjectTypesSupported
      */
-    subjectType: varchar("subject_type").$type<SubjectTypesSupported>().default("public"),
+    subjectType: varchar("subject_type").$type<string>().default("public"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 
@@ -105,11 +98,17 @@ export const relyingParties = pgTable(
 );
 
 export const SelectRelyingPartySchema = createSelectSchema(relyingParties);
+
 export const CreateRelyingPartySchema = createInsertSchema(relyingParties).omit({
   id: true,
   clientId: true,
 });
+
 export const UpdateRelyingPartySchema = createUpdateSchema(relyingParties).omit({
   id: true,
   clientId: true,
 });
+
+export type SelectRelyingParty = z.infer<typeof SelectRelyingPartySchema>;
+export type CreateRelyingParty = z.infer<typeof CreateRelyingPartySchema>;
+export type UpdateRelyingParty = z.infer<typeof UpdateRelyingPartySchema>;

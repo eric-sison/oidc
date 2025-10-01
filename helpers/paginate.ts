@@ -1,35 +1,26 @@
-import { count, DrizzleTypeError, SQL, Subquery } from "drizzle-orm";
-import { PgTable, TableLikeHasEmptySelection } from "drizzle-orm/pg-core";
-import { PgViewBase } from "drizzle-orm/pg-core/view-base";
+import { PgSelect, PgTable } from "drizzle-orm/pg-core";
+import { count } from "drizzle-orm";
+import { PaginationOptions } from "@/shared/types/common";
 import db from "@/db/connection";
 
-export const paginate = async <TFrom extends PgTable | Subquery | PgViewBase | SQL>(
-  source: TableLikeHasEmptySelection<TFrom> extends true
-    ? DrizzleTypeError<"Cannot reference a data-modifying statement subquery if it doesn't contain a `returning` clause">
-    : TFrom,
-  page?: number,
-  limit?: number,
+export const withPagination = async <T extends PgSelect>(
+  pgTable: PgTable,
+  qb: T,
+  options?: PaginationOptions,
 ) => {
-  try {
-    return await db.transaction(async (tx) => {
-      limit = limit ?? 10;
-      page = page ?? 1;
-      const offset = (page - 1) * limit;
+  const limit = options?.limit ?? 10;
+  const page = options?.page ?? 1;
+  const offset = (page - 1) * limit;
 
-      const total = await tx.select({ count: count() }).from(source);
-      const data = await tx.select().from(source).limit(limit).offset(offset);
+  const total = await db.select({ count: count() }).from(pgTable);
 
-      return {
-        data,
-        metadata: {
-          itemsPerPage: limit,
-          totalItems: total[0].count,
-          currentPage: page,
-          totalPages: Math.ceil(Number(total[0].count) / limit),
-        },
-      };
-    });
-  } catch (error) {
-    throw error;
-  }
+  return {
+    query: qb.limit(limit).offset(offset),
+    metadata: {
+      itemsPerPage: limit,
+      totalItems: total[0].count,
+      currentPage: page,
+      totalPages: Math.ceil(Number(total[0].count) / limit),
+    },
+  };
 };
