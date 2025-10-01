@@ -10,7 +10,6 @@ import {
   CLAIMS_SUPPORTED,
   CODE_CHALLENGE_METHODS,
   OIDCErrorCode,
-  ResponseTypesSupported,
 } from "@/shared/types/oidc";
 import {
   containsURIFragment,
@@ -243,6 +242,7 @@ export class ProviderService {
     this.validateStringArray("scopes_supported", scopes, {
       mustNotBeEmpty: true,
       required: ["openid"],
+      errorCode: "invalid_scope",
     });
   }
 
@@ -252,6 +252,7 @@ export class ProviderService {
       mustNotBeEmpty: true,
       required: ["code"],
       allowed: [...RESPONSE_TYPES],
+      errorCode: "unsupported_response_type",
     });
   }
 
@@ -282,6 +283,8 @@ export class ProviderService {
     this.validateStringArray("grant_types_supported", grantTypes, {
       mustNotBeEmpty: true,
       allowed: [...STANDARD_GRANT_TYPES],
+      required: ["authorization_code"],
+      errorCode: "unsupported_grant_type",
     });
   }
 
@@ -289,6 +292,7 @@ export class ProviderService {
     this.validateStringArray("token_endpoint_auth_methods_supported", authMethods, {
       mustNotBeEmpty: true,
       allowed: [...TOKEN_AUTH_METHODS],
+      required: ["client_secret_basic"],
     });
   }
 
@@ -357,16 +361,6 @@ export class ProviderService {
       throw new OIDCError({
         error: "invalid_request",
         error_description: `${name} contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
-  }
-
-  private ensureNoNonEmptyStrings(name: string, arr: string[]) {
-    if (!arr.every((s) => typeof s === "string" && s.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_scope",
-        error_description: `${name} must contain only non-empty strings`,
         status_code: 400,
       });
     }
