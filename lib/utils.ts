@@ -14,15 +14,6 @@ export function isURLValid(urlToCheck: string) {
   }
 }
 
-export function getURIHost(str: string) {
-  try {
-    const url = new URL(str);
-    return url.hostname;
-  } catch (error) {
-    return null;
-  }
-}
-
 export function getURIProtocol(str: string) {
   try {
     const url = new URL(str);
@@ -99,4 +90,13 @@ export function containsURIPath(urlToCheck: string) {
       path: undefined,
     };
   }
+}
+
+export function normalizeResponseType(rt: string): string {
+  return rt
+    .split(/\s+/) // split by spaces
+    .map((s) => s.trim())
+    .filter((s) => s !== "")
+    .sort() // normalize order
+    .join(" ");
 }

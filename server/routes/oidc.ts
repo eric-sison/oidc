@@ -8,10 +8,15 @@ export const oidcHandler = new Hono().basePath("/oidc").get("/", async (c) => {
     jwksUri: "http://localhost:3000/api/oidc/.well-known/jwks.json",
     tokenEndpoint: "http://localhost:3000/api/oidc/token",
     userinfoEndpoint: "http://localhost:3000/oidc/userinfo",
-    idTokenSigningAlgValuesSupported: ["RS256"],
+    idTokenSigningAlgValuesSupported: ["ES256", "RS256"],
+    // responseModesSupported: ["form_post"],
+    grantTypesSupported: ["authorization_code"],
+    scopesSupported: ["openid"],
     responseTypesSupported: ["code"],
-    subjectTypesSupported: ["public", "pairwise"],
+    subjectTypesSupported: ["pairwise", "public"],
     tokenEndpointAuthMethodsSupported: ["client_secret_basic"],
+    claimsSupported: ["address", "sub"],
+    codeChallengeMethodsSupported: ["S256"],
   });
 
   return c.json(providerService.getDiscoveryDocument());

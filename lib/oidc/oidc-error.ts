@@ -22,9 +22,9 @@ export class OIDCError extends Error {
   public readonly error_description?: string;
   public readonly error_uri?: string;
   public readonly state?: string;
-  public readonly status_code?: number;
+  public readonly status_code: number;
 
-  constructor(params: OIDCErrorParams & { status_code?: number }) {
+  constructor(params: OIDCErrorParams & { status_code: number }) {
     super(params.error_description ?? params.error);
     this.name = "OIDCError";
     this.error = params.error;
