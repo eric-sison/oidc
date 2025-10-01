@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { healthcheckHandler } from "./routes/healthcheck";
-import { oidcHandler } from "./routes/oidc";
+import { discoveryHandler } from "./routes/discovery";
 import { onError } from "./middleware/on-error";
 
 function createApp() {
@@ -8,7 +8,7 @@ function createApp() {
 
   app.onError(onError);
 
-  const routes = [healthcheckHandler, oidcHandler] as const;
+  const routes = [healthcheckHandler, discoveryHandler] as const;
 
   routes.forEach((route) => app.route("/", route));
 

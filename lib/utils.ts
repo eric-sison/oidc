@@ -9,7 +9,8 @@ export function isURLValid(urlToCheck: string) {
   try {
     const url = new URL(urlToCheck);
     return url.protocol === "http:" || url.protocol === "https:";
-  } catch (e) {
+  } catch (error) {
+    console.error(error);
     return false;
   }
 }
@@ -19,6 +20,7 @@ export function getURIProtocol(str: string) {
     const url = new URL(str);
     return url.protocol;
   } catch (error) {
+    console.error(error);
     return null;
   }
 }
@@ -28,6 +30,7 @@ export function isHTTPS(urlToCheck: string) {
     const url = new URL(urlToCheck);
     return url.protocol === "https:";
   } catch (error) {
+    console.error(error);
     return false;
   }
 }
@@ -36,7 +39,8 @@ export function isLocalhostURI(urlToCheck: string) {
   try {
     const uri = new URL(urlToCheck);
     return uri.hostname === "127.0.0.1" || uri.hostname === "localhost" || uri.hostname === "::1";
-  } catch (e) {
+  } catch (error) {
+    console.error(error);
     return false;
   }
 }
@@ -51,6 +55,7 @@ export function containsURIFragment(urlToCheck: string) {
       fragment: uri.hash,
     };
   } catch (error) {
+    console.error(error);
     return {
       withHash: false,
       fragment: undefined,
@@ -68,6 +73,7 @@ export function containsURISearch(urlToCheck: string) {
       search: uri.search,
     };
   } catch (error) {
+    console.error(error);
     return {
       withSearch: false,
       search: undefined,
@@ -85,6 +91,7 @@ export function containsURIPath(urlToCheck: string) {
       path: uri.pathname,
     };
   } catch (error) {
+    console.error(error);
     return {
       withPath: false,
       path: undefined,
