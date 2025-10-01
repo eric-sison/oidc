@@ -2,6 +2,16 @@ import z from "zod";
 import { SnakeCasedProperties } from "./common";
 import { AuthorizationRequestSchema } from "../validators/authorization-request";
 
+export type ValidateConfigURIOptions = {
+  valid: boolean;
+  required?: boolean;
+  httpsOnly?: boolean;
+  noPath?: boolean;
+  noFragment?: boolean;
+  noQuery?: boolean;
+  sameOrigin?: boolean;
+};
+
 export type OIDCErrorCode =
   | "invalid_request"
   | "unauthorized_client"

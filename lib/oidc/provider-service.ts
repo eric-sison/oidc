@@ -10,6 +10,7 @@ import {
   CLAIMS_SUPPORTED,
   CODE_CHALLENGE_METHODS,
   OIDCErrorCode,
+  ValidateConfigURIOptions,
 } from "@/shared/types/oidc";
 import {
   containsURIFragment,
@@ -22,16 +23,7 @@ import {
   normalizeResponseType,
 } from "../utils";
 import { OIDCError } from "./oidc-error";
-
-type ValidateConfigURIOptions = {
-  enableValidityCheck: boolean;
-  enableMissingCheck?: boolean;
-  enableProtocolCheck?: boolean;
-  enablePathCheck?: boolean;
-  enableFragmentCheck?: boolean;
-  enableSearchQueryCheck?: boolean;
-  enableSameSiteCheck?: boolean;
-};
+import { URI_VALIDATION_DEFAULTS } from "@/shared/constants/uri-validation-defaults";
 
 export class ProviderService {
   constructor(private readonly config: ProviderConfig) {
@@ -83,8 +75,8 @@ export class ProviderService {
     };
   }
 
-  private validateConfigURI(
-    uri: string | undefined = "",
+  private validateURI(
+    uri: string | undefined,
     uriType:
       | "issuer"
       | "authorization_endpoint"
@@ -92,149 +84,111 @@ export class ProviderService {
       | "token_endpoint"
       | "userinfo_endpoint"
       | "registration_endpoint",
-    options: ValidateConfigURIOptions,
+    overrides: Partial<ValidateConfigURIOptions> = {},
   ) {
-    const protocol = getURIProtocol(uri);
-    const isValid = isURLValid(uri);
-    const isLocalhost = isLocalhostURI(uri);
-    const isSecured = isHTTPS(uri);
-    const { withPath, path } = containsURIPath(uri);
-    const { withHash, fragment } = containsURIFragment(uri);
-    const { withSearch, search } = containsURISearch(uri);
+    // merge defaults + overrides
+    const options = { ...URI_VALIDATION_DEFAULTS[uriType], ...overrides };
+    const safeUri = uri ?? ""; // always a string
 
-    if (options.enableValidityCheck) {
-      if (!isValid) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} must be a valid absolute URI`,
-          status_code: 400,
-        });
-      }
+    const protocol = getURIProtocol(safeUri);
+    const isValid = isURLValid(safeUri);
+    const isLocalhost = isLocalhostURI(safeUri);
+    const isSecured = isHTTPS(safeUri);
+    const { withPath, path } = containsURIPath(safeUri);
+    const { withHash, fragment } = containsURIFragment(safeUri);
+    const { withSearch, search } = containsURISearch(safeUri);
+
+    if (options.required && !uri) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `Missing required field: ${uriType}`,
+        status_code: 400,
+      });
     }
 
-    if (options.enableMissingCheck) {
-      if (!uri) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Missing required field: ${uriType}`,
-          status_code: 400,
-        });
-      }
+    if (options.valid && !isValid) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must be a valid absolute URI`,
+        status_code: 400,
+      });
     }
 
-    if (options.enableProtocolCheck) {
-      if (!isSecured && !(isLocalhost && protocol === "http:")) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} must use https, except for localhost/loopback`,
-          status_code: 400,
-        });
-      }
+    if (options.httpsOnly && !(!uri || isSecured || (isLocalhost && protocol === "http:"))) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must use https, except for localhost/loopback`,
+        status_code: 400,
+      });
     }
 
-    if (options.enablePathCheck) {
-      if (withPath) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} should not include a path. Use root URL as issuer. Got ${path}`,
-          status_code: 400,
-        });
-      }
+    if (options.noPath && withPath) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} should not include a path. Use root URL as issuer. Got ${path}`,
+        status_code: 400,
+      });
     }
 
-    if (options.enableFragmentCheck) {
-      if (withHash) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} must not contain a fragment component. Got ${fragment}`,
-          status_code: 400,
-        });
-      }
+    if (options.noFragment && withHash) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must not contain a fragment component. Got ${fragment}`,
+        status_code: 400,
+      });
     }
 
-    if (options.enableSearchQueryCheck) {
-      if (withSearch) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} must not contain a search query component. Got ${search}`,
-          status_code: 400,
-        });
-      }
+    if (options.noQuery && withSearch) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must not contain a search query component. Got ${search}`,
+        status_code: 400,
+      });
     }
 
-    if (options.enableSameSiteCheck) {
-      if (!uri.startsWith(this.config.issuer)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `${uriType} must be under the issuer URL`,
-          status_code: 400,
-        });
-      }
+    if (options.sameOrigin && uri && !uri.startsWith(this.config.issuer)) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must be under the issuer URL`,
+        status_code: 400,
+      });
     }
   }
 
   private validateIssuer(issuer: string) {
-    this.validateConfigURI(issuer, "issuer", {
-      enableValidityCheck: true,
-      enableMissingCheck: true,
-      enableProtocolCheck: true,
-      enablePathCheck: true,
-      enableFragmentCheck: true,
-      enableSearchQueryCheck: true,
-    });
+    this.validateURI(issuer, "issuer");
   }
 
   private validateAuthorizationEndpoint(authorizationEndpoint: string) {
-    this.validateConfigURI(authorizationEndpoint, "authorization_endpoint", {
-      enableValidityCheck: true,
-      enableMissingCheck: true,
-      enableProtocolCheck: true,
-      enableFragmentCheck: true,
-      enableSearchQueryCheck: true,
-      enableSameSiteCheck: true,
-    });
+    this.validateURI(authorizationEndpoint, "authorization_endpoint");
   }
 
   private validateJWKS(jwksURI: string) {
-    this.validateConfigURI(jwksURI, "jwks_uri", {
-      enableValidityCheck: true,
-      enableMissingCheck: true,
-      enableProtocolCheck: true,
-      enableFragmentCheck: true,
-      enableSearchQueryCheck: true,
-      enableSameSiteCheck: true,
-    });
+    this.validateURI(jwksURI, "jwks_uri");
   }
 
   private validateTokenEndpoint(tokenEndpoint: string) {
-    this.validateConfigURI(tokenEndpoint, "token_endpoint", {
-      enableValidityCheck: true,
-      enableMissingCheck: true,
-      enableProtocolCheck: true,
-      enableFragmentCheck: true,
-      enableSearchQueryCheck: true,
-      enableSameSiteCheck: true,
-    });
+    this.validateURI(tokenEndpoint, "token_endpoint");
   }
 
   private validateUserinfo(userInfoEndpoint: string | undefined) {
-    this.validateConfigURI(userInfoEndpoint, "userinfo_endpoint", {
-      enableValidityCheck: !!userInfoEndpoint,
-      enableProtocolCheck: !!userInfoEndpoint,
-      enableFragmentCheck: !!userInfoEndpoint,
-      enableSearchQueryCheck: !!userInfoEndpoint,
-      enableSameSiteCheck: !!userInfoEndpoint,
-      enableMissingCheck: this.config.scopesSupported?.includes("openid"),
+    this.validateURI(userInfoEndpoint, "userinfo_endpoint", {
+      valid: !!userInfoEndpoint,
+      httpsOnly: !!userInfoEndpoint,
+      noFragment: !!userInfoEndpoint,
+      noQuery: !!userInfoEndpoint,
+      sameOrigin: !!userInfoEndpoint,
+      required: this.config.scopesSupported?.includes("openid"),
     });
   }
 
   private validateRegistrationEndpoint(registrationEndpoint: string | undefined) {
-    this.validateConfigURI(registrationEndpoint, "registration_endpoint", {
-      enableValidityCheck: !!registrationEndpoint,
-      enableProtocolCheck: !!registrationEndpoint,
-      enableSameSiteCheck: !!registrationEndpoint,
-      enableFragmentCheck: !!registrationEndpoint,
-      enableSearchQueryCheck: !!registrationEndpoint,
+    this.validateURI(registrationEndpoint, "registration_endpoint", {
+      valid: !!registrationEndpoint,
+      httpsOnly: !!registrationEndpoint,
+      sameOrigin: !!registrationEndpoint,
+      noFragment: !!registrationEndpoint,
+      noQuery: !!registrationEndpoint,
     });
   }
 

@@ -11,7 +11,7 @@ export const oidcHandler = new Hono().basePath("/oidc").get("/", async (c) => {
     idTokenSigningAlgValuesSupported: ["RS256"],
     // responseModesSupported: ["form_post"],
     grantTypesSupported: ["authorization_code"],
-    scopesSupported: ["address", "openid", "asd"],
+    scopesSupported: ["address", "asd"],
     responseTypesSupported: ["code"],
     subjectTypesSupported: ["pairwise", "public"],
     tokenEndpointAuthMethodsSupported: ["client_secret_basic"],
