@@ -28,6 +28,8 @@ export type OIDCErrorParams = {
   state?: string; // per spec, returned if present in request
 };
 
+export const SCOPES_SUPPORTED = ["openid", "profile", "email", "address", "phone", "offline_access"] as const;
+
 export const CODE_CHALLENGE_METHODS = ["plain", "S256"] as const;
 
 export const SUBJECT_TYPES = ["public", "pairwise"] as const;
@@ -100,7 +102,7 @@ export const CLAIMS_SUPPORTED = [
   "updated_at",
 ] as const;
 
-export type ScopesSupported = "openid" | "profile" | "email" | "address" | "phone" | "offline_access";
+export type ScopesSupported = (typeof SCOPES_SUPPORTED)[number];
 export type ResponseTypesSupported = (typeof RESPONSE_TYPES)[number];
 export type SubjectTypesSupported = (typeof SUBJECT_TYPES)[number];
 export type IdTokenSigningAlgValuesSupported = (typeof ID_TOKEN_SIGNING_ALGS)[number];

@@ -34,35 +34,12 @@ type ValidateConfigURIOptions = {
 
 export class ProviderService {
   constructor(private readonly config: ProviderConfig) {
-    // Set defaults for scopes_supported
-    if (config.scopesSupported === undefined) {
-      config.scopesSupported = ["openid"];
-    }
-
-    // Set defaults for response_modes_supported
-    if (config.responseModesSupported === undefined) {
-      config.responseModesSupported = ["query", "fragment", "form_post"];
-    }
-
-    // Set defaults for grant_types_supported
-    if (config.grantTypesSupported === undefined) {
-      config.grantTypesSupported = ["authorization_code", "implicit"];
-    }
-
-    // Set defaults for token_endpoint_auth_methods_supported
-    if (config.tokenEndpointAuthMethodsSupported === undefined) {
-      config.tokenEndpointAuthMethodsSupported = ["client_secret_basic"];
-    }
-
-    // Set defaults for claims_supported
-    if (config.claimsSupported === undefined) {
-      config.claimsSupported = ["sub"];
-    }
-
-    // Set defaults for code_challenge_methods_supported
-    if (config.codeChallengeMethodsSupported === undefined) {
-      config.codeChallengeMethodsSupported = ["plain"];
-    }
+    config.scopesSupported ??= ["openid"];
+    config.responseModesSupported ??= ["query", "fragment"];
+    config.grantTypesSupported ??= ["authorization_code", "implicit"];
+    config.tokenEndpointAuthMethodsSupported ??= ["client_secret_basic"];
+    config.claimsSupported ??= ["sub"];
+    config.codeChallengeMethodsSupported ??= ["plain"];
 
     this.validateConfig();
   }
@@ -83,6 +60,26 @@ export class ProviderService {
     this.validateTokenEndpointAuthMethodsSupported(this.config.tokenEndpointAuthMethodsSupported);
     this.validateClaimsSupported(this.config.claimsSupported);
     this.validateCodeChallengeMethods(this.config.codeChallengeMethodsSupported);
+  }
+
+  public getDiscoveryDocument(): DiscoveryDocument {
+    return {
+      issuer: this.config.issuer,
+      authorization_endpoint: this.config.authorizationEndpoint,
+      jwks_uri: this.config.jwksUri,
+      token_endpoint: this.config.tokenEndpoint,
+      userinfo_endpoint: this.config.userinfoEndpoint,
+      registration_endpoint: this.config.registrationEndpoint,
+      scopes_supported: this.config.scopesSupported,
+      response_types_supported: this.config.responseTypesSupported,
+      subject_types_supported: this.config.subjectTypesSupported,
+      id_token_signing_alg_values_supported: this.config.idTokenSigningAlgValuesSupported,
+      response_modes_supported: this.config.responseModesSupported,
+      grant_types_supported: this.config.grantTypesSupported,
+      token_endpoint_auth_methods_supported: this.config.tokenEndpointAuthMethodsSupported,
+      claims_supported: this.config.claimsSupported,
+      code_challenge_methods_supported: this.config.codeChallengeMethodsSupported,
+    };
   }
 
   private validateConfigURI(
@@ -175,26 +172,6 @@ export class ProviderService {
     }
   }
 
-  public getDiscoveryDocument(): DiscoveryDocument {
-    return {
-      issuer: this.config.issuer,
-      authorization_endpoint: this.config.authorizationEndpoint,
-      jwks_uri: this.config.jwksUri,
-      token_endpoint: this.config.tokenEndpoint,
-      userinfo_endpoint: this.config.userinfoEndpoint,
-      registration_endpoint: this.config.registrationEndpoint,
-      scopes_supported: this.config.scopesSupported,
-      response_types_supported: this.config.responseTypesSupported,
-      subject_types_supported: this.config.subjectTypesSupported,
-      id_token_signing_alg_values_supported: this.config.idTokenSigningAlgValuesSupported,
-      response_modes_supported: this.config.responseModesSupported,
-      grant_types_supported: this.config.grantTypesSupported,
-      token_endpoint_auth_methods_supported: this.config.tokenEndpointAuthMethodsSupported,
-      claims_supported: this.config.claimsSupported,
-      code_challenge_methods_supported: this.config.codeChallengeMethodsSupported,
-    };
-  }
-
   private validateIssuer(issuer: string) {
     this.validateConfigURI(issuer, "issuer", {
       enableValidityCheck: true,
@@ -269,31 +246,9 @@ export class ProviderService {
       });
     }
 
-    if (!scopes.every((s) => typeof s === "string" && s.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_scope",
-        error_description: "scopes_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    if (!scopes.includes("openid")) {
-      throw new OIDCError({
-        error: "invalid_scope",
-        error_description: "scopes_supported should include 'openid'",
-        status_code: 400,
-      });
-    }
-
-    // Check for duplicates
-    const duplicates = scopes.filter((item, index) => scopes.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_scope",
-        error_description: `scopes_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("scopes_supported", scopes);
+    this.ensureIncludes("scopes_suported", scopes, ["openid"]);
+    this.ensureNoDuplicates("scopes_supported", scopes);
   }
 
   private validateResponseTypesSupported(responseTypes: unknown) {
@@ -305,35 +260,10 @@ export class ProviderService {
       });
     }
 
-    if (!responseTypes.every((r) => typeof r === "string" && r.trim() !== "")) {
-      throw new OIDCError({
-        error: "unsupported_response_type",
-        error_description: "response_types_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
     const normalized = responseTypes.map((rt) => normalizeResponseType(rt));
-
-    // Check for duplicates after normalization
-    const duplicates = normalized.filter((item, index) => normalized.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "unsupported_response_type",
-        error_description: `response_types_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
-
-    for (const rt of normalized) {
-      if (!(RESPONSE_TYPES as readonly string[]).includes(rt)) {
-        throw new OIDCError({
-          error: "unsupported_response_type",
-          error_description: `Invalid response_type value: ${rt}`,
-          status_code: 400,
-        });
-      }
-    }
+    this.ensureNoNonEmptyStrings("response_types_supported", normalized);
+    this.ensureNoDuplicates("response_types_supported", normalized);
+    this.ensureAllowedValuesOnly("response_types_supported", normalized, [...RESPONSE_TYPES]);
   }
 
   private validateSubjectTypesSupported(subjectTypes: unknown) {
@@ -345,42 +275,10 @@ export class ProviderService {
       });
     }
 
-    if (!subjectTypes.every((s) => typeof s === "string" && s.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "subject_types_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    // Must include "public"
-    if (!subjectTypes.includes("public")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "subject_types_supported must include 'public'",
-        status_code: 400,
-      });
-    }
-
-    for (const s of subjectTypes) {
-      if (!SUBJECT_TYPES.includes(s as "public" | "pairwise")) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Invalid subject_type: ${s}. Allowed values: ${SUBJECT_TYPES.join(", ")}`,
-          status_code: 400,
-        });
-      }
-    }
-
-    // Duplicates check
-    const duplicates = subjectTypes.filter((item, index) => subjectTypes.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `subject_types_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("subject_types_supported", subjectTypes);
+    this.ensureIncludes("subject_types_supported", subjectTypes, ["public"]);
+    this.ensureAllowedValuesOnly("subject_types_supported", subjectTypes, [...SUBJECT_TYPES]);
+    this.ensureNoDuplicates("subject_types_supported", subjectTypes);
   }
 
   private validateIdTokenSigningAlgValuesSupported(algs: unknown) {
@@ -392,41 +290,10 @@ export class ProviderService {
       });
     }
 
-    if (!algs.every((a) => typeof a === "string" && a.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "id_token_signing_alg_values_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    if (!algs.includes("RS256")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "id_token_signing_alg_values_supported must include 'RS256'",
-        status_code: 400,
-      });
-    }
-
-    for (const alg of algs) {
-      if (!ID_TOKEN_SIGNING_ALGS.includes(alg)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Invalid id_token signing algorithm: ${alg}`,
-          status_code: 400,
-        });
-      }
-    }
-
-    // Duplicates check
-    const duplicates = algs.filter((item, index) => algs.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `id_token_signing_alg_values_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("id_token_signing_values_supported", algs);
+    this.ensureIncludes("id_token_signing_values_supported", algs, ["RS256"]);
+    this.ensureAllowedValuesOnly("id_token_signing_values_supported", algs, [...ID_TOKEN_SIGNING_ALGS]);
+    this.ensureNoDuplicates("id_token_signing_alg_values_supported", algs);
   }
 
   public validateResponseModesSupported(modes: unknown) {
@@ -438,33 +305,9 @@ export class ProviderService {
       });
     }
 
-    if (!modes.every((m) => typeof m === "string" && m.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "response_modes_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    for (const m of modes) {
-      if (!RESPONSE_MODES.includes(m)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Non-standard response_mode detected: ${m}`,
-          status_code: 400,
-        });
-      }
-    }
-
-    // Duplicates check
-    const duplicates = modes.filter((item, index) => modes.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `response_modes_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("response_modes_supported", modes);
+    this.ensureAllowedValuesOnly("response_modes_supported", modes, [...RESPONSE_MODES]);
+    this.ensureNoDuplicates("response_modes_supported", modes);
   }
 
   private validateGranTypesSupported(grantTypes: unknown) {
@@ -476,33 +319,9 @@ export class ProviderService {
       });
     }
 
-    if (!grantTypes.every((g) => typeof g === "string" && g.trim() !== "")) {
-      throw new OIDCError({
-        error: "unsupported_grant_type",
-        error_description: "grant_types_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    for (const g of grantTypes) {
-      if (!STANDARD_GRANT_TYPES.includes(g)) {
-        throw new OIDCError({
-          error: "unsupported_grant_type",
-          error_description: `Non-standard grant_type detected: ${g}`,
-          status_code: 400,
-        });
-      }
-    }
-
-    // Duplicates check
-    const duplicates = grantTypes.filter((item, index) => grantTypes.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `grant_types_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("grant_types_supported", grantTypes);
+    this.ensureAllowedValuesOnly("grant_types_supported", grantTypes, [...STANDARD_GRANT_TYPES]);
+    this.ensureNoDuplicates("grant_types_supported", grantTypes);
   }
 
   private validateTokenEndpointAuthMethodsSupported(methods: unknown) {
@@ -514,33 +333,9 @@ export class ProviderService {
       });
     }
 
-    if (!methods.every((m) => typeof m === "string" && m.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "token_endpoint_auth_methods_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    for (const m of methods) {
-      if (!TOKEN_AUTH_METHODS.includes(m)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Non-standard token_endpoint_auth_method detected: ${m}`,
-          status_code: 400,
-        });
-      }
-    }
-
-    // Duplicates check
-    const duplicates = methods.filter((item, index) => methods.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `token_endpoint_auth_methods_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
+    this.ensureNoNonEmptyStrings("token_endpoint_auth_methods_supported", methods);
+    this.ensureAllowedValuesOnly("token_endpoint_auth_methods_supported", methods, [...TOKEN_AUTH_METHODS]);
+    this.ensureNoDuplicates("token_endpoint_auth_methods_supported", methods);
   }
 
   private validateClaimsSupported(claims: unknown) {
@@ -552,42 +347,10 @@ export class ProviderService {
       });
     }
 
-    if (!claims.every((c) => typeof c === "string" && c.trim() !== "")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "claims_supported must contain only non-empty strings",
-        status_code: 400,
-      });
-    }
-
-    // Duplicates check
-    const duplicates = claims.filter((item, index) => claims.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `claims_supported contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
-
-    // Must include "sub"
-    if (!claims.includes("sub")) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "claims_supported must include 'sub'",
-        status_code: 400,
-      });
-    }
-
-    for (const c of claims) {
-      if (!CLAIMS_SUPPORTED.includes(c)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: `Non-standard claim detected: ${c}`,
-          status_code: 400,
-        });
-      }
-    }
+    this.ensureIncludes("claims_supported", claims, ["sub"]);
+    this.ensureNoNonEmptyStrings("claims_supported", claims);
+    this.ensureAllowedValuesOnly("claims_supported", claims, [...CLAIMS_SUPPORTED]);
+    this.ensureNoDuplicates("claims_supported", claims);
   }
 
   private validateCodeChallengeMethods(methods: unknown) {
@@ -609,19 +372,56 @@ export class ProviderService {
       });
     }
 
-    // Duplicates check
-    const duplicates = methods.filter((m, i) => methods.indexOf(m) !== i);
-    if (duplicates.length > 0) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `code_challenge_methods_supported contains duplicates: ${[...new Set(duplicates)].join(", ")}`,
-        status_code: 400,
-      });
-    }
-
     // Strong recommendation for S256
     if (!methods.includes("S256")) {
       console.warn("PKCE without S256 is discouraged. Support for S256 is RECOMMENDED.");
+    }
+
+    this.ensureNoDuplicates("code_challenge_methods_supported", methods);
+  }
+
+  private ensureNoDuplicates(name: string, arr: string[]) {
+    const duplicates = arr.filter((item, index) => arr.indexOf(item) !== index);
+    if (duplicates.length > 0) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${name} contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
+        status_code: 400,
+      });
+    }
+  }
+
+  private ensureNoNonEmptyStrings(name: string, arr: string[]) {
+    if (!arr.every((s) => typeof s === "string" && s.trim() !== "")) {
+      throw new OIDCError({
+        error: "invalid_scope",
+        error_description: `${name} must contain only non-empty strings`,
+        status_code: 400,
+      });
+    }
+  }
+
+  private ensureIncludes(name: string, arr: string[], required: string[]) {
+    for (const req of required) {
+      if (!arr.includes(req)) {
+        throw new OIDCError({
+          error: "invalid_request",
+          error_description: `${name} must include "${req}"`,
+          status_code: 400,
+        });
+      }
+    }
+  }
+
+  public ensureAllowedValuesOnly(name: string, arr: string[], ref: string[]) {
+    for (const rt of arr) {
+      if (!(ref as readonly string[]).includes(rt)) {
+        throw new OIDCError({
+          error: "unsupported_response_type",
+          error_description: `Invalid ${name} value: ${rt}. Allowed values: ${ref.join(", ")}`,
+          status_code: 400,
+        });
+      }
     }
   }
 
