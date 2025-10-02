@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import { DiscoveryDocument, ProviderConfig } from "@/shared/types/oidc";
 import { URIValidator } from "./uri-validator";
 import { ArrayValidator } from "./array-validator";
@@ -86,7 +88,7 @@ export class ProviderService {
   /**
    * Helper to get config value by key (handles camelCase to config mapping)
    */
-  private getConfigValue(key: string): any {
+  private getConfigValue(key: string) {
     return (this.config as any)[key];
   }
 
