@@ -10,6 +10,7 @@ export const discoveryHandler = new Hono()
       jwksUri: "http://localhost:3000/api/oidc/.well-known/jwks.json",
       tokenEndpoint: "http://localhost:3000/api/oidc/token",
       userinfoEndpoint: "http://localhost:3000/oidc/userinfo",
+      registrationEndpoint: "http://localhost:3000/oidc/registration",
       idTokenSigningAlgValuesSupported: ["RS256"],
       grantTypesSupported: ["authorization_code"],
       scopesSupported: ["address", "openid"],
@@ -17,7 +18,7 @@ export const discoveryHandler = new Hono()
       subjectTypesSupported: ["pairwise", "public"],
       tokenEndpointAuthMethodsSupported: ["client_secret_basic"],
       claimsSupported: ["address", "sub"],
-      codeChallengeMethodsSupported: ["S256"],
+      // codeChallengeMethodsSupported: ["S256"],
     });
 
     return c.json(providerService.getDiscoveryDocument());

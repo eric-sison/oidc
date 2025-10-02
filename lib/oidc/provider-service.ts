@@ -23,7 +23,6 @@ import {
   normalizeResponseType,
 } from "../utils";
 import { OIDCError } from "./oidc-error";
-import { URI_VALIDATION_DEFAULTS } from "@/shared/constants/uri-validation-defaults";
 
 export class ProviderService {
   constructor(private readonly config: ProviderConfig) {
@@ -75,100 +74,52 @@ export class ProviderService {
     };
   }
 
-  private validateURI(
-    uri: string | undefined,
-    uriType:
-      | "issuer"
-      | "authorization_endpoint"
-      | "jwks_uri"
-      | "token_endpoint"
-      | "userinfo_endpoint"
-      | "registration_endpoint",
-    overrides: Partial<ValidateConfigURIOptions> = {},
-  ) {
-    // merge defaults + overrides
-    const options = { ...URI_VALIDATION_DEFAULTS[uriType], ...overrides };
-    const safeUri = uri ?? ""; // always a string
-
-    const protocol = getURIProtocol(safeUri);
-    const isValid = isURLValid(safeUri);
-    const isLocalhost = isLocalhostURI(safeUri);
-    const isSecured = isHTTPS(safeUri);
-    const { withPath, path } = containsURIPath(safeUri);
-    const { withHash, fragment } = containsURIFragment(safeUri);
-    const { withSearch, search } = containsURISearch(safeUri);
-
-    if (options.required && !uri) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `Missing required field: ${uriType}`,
-        status_code: 400,
-      });
-    }
-
-    if (options.valid && !isValid) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} must be a valid absolute URI`,
-        status_code: 400,
-      });
-    }
-
-    if (options.httpsOnly && !(!uri || isSecured || (isLocalhost && protocol === "http:"))) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} must use https, except for localhost/loopback`,
-        status_code: 400,
-      });
-    }
-
-    if (options.noPath && withPath) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} should not include a path. Use root URL as issuer. Got ${path}`,
-        status_code: 400,
-      });
-    }
-
-    if (options.noFragment && withHash) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} must not contain a fragment component. Got ${fragment}`,
-        status_code: 400,
-      });
-    }
-
-    if (options.noQuery && withSearch) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} must not contain a search query component. Got ${search}`,
-        status_code: 400,
-      });
-    }
-
-    if (options.sameOrigin && uri && !uri.startsWith(this.config.issuer)) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: `${uriType} must be under the issuer URL`,
-        status_code: 400,
-      });
-    }
-  }
-
   private validateIssuer(issuer: string) {
-    this.validateURI(issuer, "issuer");
+    this.validateURI(issuer, "issuer", {
+      valid: true,
+      required: true,
+      httpsOnly: true,
+      noPath: true,
+      noFragment: true,
+      noQuery: true,
+      sameOrigin: false,
+    });
   }
 
   private validateAuthorizationEndpoint(authorizationEndpoint: string) {
-    this.validateURI(authorizationEndpoint, "authorization_endpoint");
+    this.validateURI(authorizationEndpoint, "authorization_endpoint", {
+      valid: true,
+      required: true,
+      httpsOnly: true,
+      noFragment: true,
+      noQuery: true,
+      sameOrigin: true,
+      noPath: false,
+    });
   }
 
   private validateJWKS(jwksURI: string) {
-    this.validateURI(jwksURI, "jwks_uri");
+    this.validateURI(jwksURI, "jwks_uri", {
+      valid: true,
+      required: true,
+      httpsOnly: true,
+      noFragment: true,
+      noQuery: true,
+      sameOrigin: true,
+      noPath: false,
+    });
   }
 
   private validateTokenEndpoint(tokenEndpoint: string) {
-    this.validateURI(tokenEndpoint, "token_endpoint");
+    this.validateURI(tokenEndpoint, "token_endpoint", {
+      valid: true,
+      required: true,
+      httpsOnly: true,
+      noFragment: true,
+      noQuery: true,
+      sameOrigin: true,
+      noPath: false,
+    });
   }
 
   private validateUserinfo(userInfoEndpoint: string | undefined) {
@@ -183,13 +134,15 @@ export class ProviderService {
   }
 
   private validateRegistrationEndpoint(registrationEndpoint: string | undefined) {
-    this.validateURI(registrationEndpoint, "registration_endpoint", {
-      valid: !!registrationEndpoint,
-      httpsOnly: !!registrationEndpoint,
-      sameOrigin: !!registrationEndpoint,
-      noFragment: !!registrationEndpoint,
-      noQuery: !!registrationEndpoint,
-    });
+    if (registrationEndpoint) {
+      this.validateURI(registrationEndpoint, "registration_endpoint", {
+        valid: true,
+        httpsOnly: true,
+        sameOrigin: true,
+        noFragment: true,
+        noQuery: true,
+      });
+    }
   }
 
   private validateSupportedScopes(scopes: string[] | undefined) {
@@ -272,6 +225,86 @@ export class ProviderService {
     }
   }
 
+  private validateURI(
+    uri: string | undefined,
+    uriType: keyof Pick<
+      DiscoveryDocument,
+      | "issuer"
+      | "authorization_endpoint"
+      | "jwks_uri"
+      | "token_endpoint"
+      | "userinfo_endpoint"
+      | "registration_endpoint"
+    >,
+    options: Partial<ValidateConfigURIOptions> = {},
+  ) {
+    const safeUri = uri ?? ""; // always a string
+
+    const protocol = getURIProtocol(safeUri);
+    const isValid = isURLValid(safeUri);
+    const isLocalhost = isLocalhostURI(safeUri);
+    const isSecured = isHTTPS(safeUri);
+    const { withPath, path } = containsURIPath(safeUri);
+    const { withHash, fragment } = containsURIFragment(safeUri);
+    const { withSearch, search } = containsURISearch(safeUri);
+
+    if (options.valid && !isValid) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must be a valid absolute URI`,
+        status_code: 400,
+      });
+    }
+
+    if (options.required && !uri) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `Missing required field: ${uriType}`,
+        status_code: 400,
+      });
+    }
+
+    if (options.httpsOnly && !(!uri || isSecured || (isLocalhost && protocol === "http:"))) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must use https, except for localhost/loopback`,
+        status_code: 400,
+      });
+    }
+
+    if (options.noPath && withPath) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} should not include a path. Use root URL as issuer. Got ${path}`,
+        status_code: 400,
+      });
+    }
+
+    if (options.noFragment && withHash) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must not contain a fragment component. Got ${fragment}`,
+        status_code: 400,
+      });
+    }
+
+    if (options.noQuery && withSearch) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must not contain a search query component. Got ${search}`,
+        status_code: 400,
+      });
+    }
+
+    if (options.sameOrigin && uri && !uri.startsWith(this.config.issuer)) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: `${uriType} must be under the issuer URL`,
+        status_code: 400,
+      });
+    }
+  }
+
   private validateStringArray(
     name: keyof DiscoveryDocument,
     arr: unknown,
@@ -314,18 +347,20 @@ export class ProviderService {
     if (duplicates.length > 0) {
       throw new OIDCError({
         error: "invalid_request",
-        error_description: `${name} contains duplicate values: ${[...new Set(duplicates)].join(", ")}`,
+        error_description: `${name} contains duplicate values: [${[...new Set(duplicates)].join(", ")}]`,
         status_code: 400,
       });
     }
   }
 
   private ensureIncludes(name: string, arr: string[], required: string[]) {
+    const missing = required.filter((req) => !arr.includes(req));
+
     for (const req of required) {
       if (!arr.includes(req)) {
         throw new OIDCError({
           error: "invalid_request",
-          error_description: `${name} must include "${req}"`,
+          error_description: `${name} must include: [${missing.join(", ")}]`,
           status_code: 400,
         });
       }
