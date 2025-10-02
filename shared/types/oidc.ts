@@ -1,6 +1,4 @@
-import z from "zod";
 import { SnakeCasedProperties } from "./common";
-import { AuthorizationRequestSchema } from "../validators/authorization-request";
 
 export type ValidateConfigURIOptions = {
   valid: boolean;
@@ -39,11 +37,8 @@ export type OIDCErrorParams = {
 };
 
 export const SCOPES_SUPPORTED = ["openid", "profile", "email", "address", "phone", "offline_access"] as const;
-
 export const CODE_CHALLENGE_METHODS = ["plain", "S256"] as const;
-
 export const SUBJECT_TYPES = ["public", "pairwise"] as const;
-
 export const RESPONSE_MODES = ["query", "fragment", "form_post"] as const;
 
 export const RESPONSE_TYPES = [
@@ -125,6 +120,8 @@ export type CodeChallengeMethodsSupported = (typeof CODE_CHALLENGE_METHODS)[numb
 export type DiscoveryDocument = SnakeCasedProperties<
   Omit<ProviderConfig, "requirePKCEForPublicClients" | "requireState">
 >;
+
+export type FlowType = "hybrid" | "authorization_code" | "implicit";
 
 export type ProviderConfig = {
   /**
@@ -324,6 +321,13 @@ export type ProviderConfig = {
   codeChallengeMethodsSupported?: CodeChallengeMethodsSupported[] | string[];
 };
 
-export type AuthorizationRequest = z.infer<typeof AuthorizationRequestSchema>;
-
-export type FlowType = "hybrid" | "authorization_code" | "implicit";
+export type AuthorizationRequest = {
+  response_type: string; // "code", "id_token", "token", or space-delimited combo
+  client_id: string;
+  scope: string; // must include "openid"
+  redirect_uri: string;
+  state?: string; // Required if response_type includes "id_token" or "token"
+  response_mode?: ResponseModesSupported;
+  nonce?: string;
+  prompt?: string;
+};

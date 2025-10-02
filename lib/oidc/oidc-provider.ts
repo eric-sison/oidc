@@ -28,12 +28,10 @@ export class ProviderService {
   constructor(private readonly config: ProviderConfig) {
     config.scopesSupported ??= ["openid"];
     config.responseModesSupported ??= ["query", "fragment"];
-    config.grantTypesSupported ??= ["authorization_code", "implicit"];
+    config.grantTypesSupported ??= ["authorization_code"];
     config.tokenEndpointAuthMethodsSupported ??= ["client_secret_basic"];
     config.claimsSupported ??= ["sub"];
-    config.codeChallengeMethodsSupported ??= ["plain"];
-
-    this.validateConfig();
+    config.codeChallengeMethodsSupported ??= ["S256"];
   }
 
   public validateConfig() {
@@ -179,7 +177,7 @@ export class ProviderService {
     });
   }
 
-  public validateResponseModesSupported(modes: string[] | undefined) {
+  private validateResponseModesSupported(modes: string[] | undefined) {
     this.validateStringArray("response_modes_supported", modes, {
       mustNotBeEmpty: true,
       allowed: [...RESPONSE_MODES],
@@ -367,7 +365,7 @@ export class ProviderService {
     }
   }
 
-  public ensureAllowedValuesOnly(name: string, arr: string[], ref: string[]) {
+  private ensureAllowedValuesOnly(name: string, arr: string[], ref: string[]) {
     for (const rt of arr) {
       if (!(ref as readonly string[]).includes(rt)) {
         throw new OIDCError({

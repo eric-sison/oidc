@@ -1,6 +1,7 @@
 import { type CreateRelyingParty, type UpdateRelyingParty, relyingParties } from "@/db/schemas/client-schema";
 import { type PaginationOptions } from "@/shared/types/common";
 import { withPagination } from "@/helpers/paginate";
+import { OIDCError } from "./oidc-error";
 import { eq } from "drizzle-orm";
 import db from "@/db/connection";
 
@@ -59,6 +60,14 @@ export class ClientService {
       })
       .from(relyingParties)
       .where(eq(relyingParties.clientId, clientId));
+
+    if (!client.length) {
+      throw new OIDCError({
+        error: "unauthorized_client",
+        error_description: "Unknown client",
+        status_code: 401,
+      });
+    }
 
     return client[0];
   }
