@@ -1,3 +1,4 @@
+import { AuthorizationService } from "./authorization";
 import { ProviderService } from "./oidc-provider";
 import { OIDC_CONFIG } from "@/shared/constants/oidc-config";
 
@@ -5,11 +6,11 @@ export class ProviderInstance {
   private static instance: ProviderInstance;
 
   private readonly providerService: ProviderService;
-  // private readonly authorizationService: AuthorizationService;
+  private readonly authorizationService: AuthorizationService;
 
   private constructor() {
     this.providerService = new ProviderService(OIDC_CONFIG);
-    //this.authorizationService = new AuthorizationService();
+    this.authorizationService = new AuthorizationService();
   }
 
   public static init(): ProviderInstance {
@@ -23,7 +24,7 @@ export class ProviderInstance {
     return this.providerService;
   }
 
-  // public getAuthorization() {
-  //   return this.authorizationService;
-  // }
+  public getAuthorization() {
+    return this.authorizationService;
+  }
 }
