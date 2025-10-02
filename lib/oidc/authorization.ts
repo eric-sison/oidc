@@ -1,6 +1,6 @@
 import { AuthorizationRequest, ResponseTypesSupported, ScopesSupported } from "@/shared/types/oidc";
 import { OIDCError } from "./oidc-error";
-import { ProviderService } from "./oidc-provider";
+import { ProviderService } from "./provider-service";
 import { normalizeSpaceDelimitedSet } from "../utils";
 import { ClientService } from "./client-service";
 
