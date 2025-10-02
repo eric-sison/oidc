@@ -13,7 +13,7 @@ export const OIDC_CONFIG: ProviderConfig = {
   idTokenSigningAlgValuesSupported: ["RS256"],
   grantTypesSupported: ["authorization_code"],
   scopesSupported: ["openid", "profile", "email", "address", "phone", "offline_access"],
-  responseTypesSupported: ["code"],
+  responseTypesSupported: ["code", "code id_token", "code token", "code id_token token"],
   subjectTypesSupported: ["public"],
   tokenEndpointAuthMethodsSupported: ["client_secret_basic", "client_secret_post"],
   codeChallengeMethodsSupported: ["S256"],

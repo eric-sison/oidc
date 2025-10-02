@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { $oidc } from "../app";
+import { AuthorizationRequest } from "@/shared/types/oidc";
 
 export const oidcHandler = new Hono()
   .basePath("/oidc")
@@ -17,5 +18,7 @@ export const oidcHandler = new Hono()
 
   // Authorization
   .get("/authorize", async (c) => {
+    const authorizationRequest = c.req.query() as AuthorizationRequest;
+    $oidc.getAuthorization().validateRequest(authorizationRequest);
     return c.json({ test: "hehe" });
   });

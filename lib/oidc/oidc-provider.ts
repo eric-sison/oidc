@@ -21,7 +21,7 @@ import {
   isHTTPS,
   isLocalhostURI,
   isURLValid,
-  normalizeResponseType,
+  normalizeSpaceDelimitedSet,
 } from "../utils";
 
 export class ProviderService {
@@ -67,8 +67,8 @@ export class ProviderService {
       response_modes_supported: this.config.responseModesSupported,
       grant_types_supported: this.config.grantTypesSupported,
       token_endpoint_auth_methods_supported: this.config.tokenEndpointAuthMethodsSupported,
-      claims_supported: this.config.claimsSupported,
       code_challenge_methods_supported: this.config.codeChallengeMethodsSupported,
+      claims_supported: this.config.claimsSupported,
     };
   }
 
@@ -152,7 +152,7 @@ export class ProviderService {
   }
 
   private validateResponseTypesSupported(responseTypes: string[]) {
-    const normalized = responseTypes.map((rt) => normalizeResponseType(rt));
+    const normalized = responseTypes.map((rt) => normalizeSpaceDelimitedSet(rt));
     this.validateStringArray("response_types_supported", normalized, {
       mustNotBeEmpty: true,
       required: ["code"],

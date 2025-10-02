@@ -99,7 +99,14 @@ export function containsURIPath(urlToCheck: string) {
   }
 }
 
-export function normalizeResponseType(rt: string): string {
+/**
+ * Normalizes a space-delimited string parameter (e.g., response_type, scope)
+ * - Splits on whitespace
+ * - Removes empties
+ * - Sorts alphabetically to make order-insensitive
+ * - Joins back with a single space
+ */
+export function normalizeSpaceDelimitedSet(rt: string): string {
   return rt
     .split(/\s+/) // split by spaces
     .map((s) => s.trim())
