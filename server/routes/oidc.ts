@@ -19,6 +19,6 @@ export const oidcHandler = new Hono()
   // Authorization
   .get("/authorize", async (c) => {
     const authorizationRequest = c.req.query() as AuthorizationRequest;
-    $oidc.getAuthorization().validateRequest(authorizationRequest);
+    await $oidc.getAuthorization().validateRequest(authorizationRequest);
     return c.json({ test: "hehe" });
   });

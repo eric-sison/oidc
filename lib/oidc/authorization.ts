@@ -1,4 +1,4 @@
-import { AuthorizationRequest, ResponseTypesSupported } from "@/shared/types/oidc";
+import { AuthorizationRequest, ResponseTypesSupported, ScopesSupported } from "@/shared/types/oidc";
 import { OIDCError } from "./oidc-error";
 import { ProviderService } from "./oidc-provider";
 import { normalizeSpaceDelimitedSet } from "../utils";
@@ -15,12 +15,14 @@ export class AuthorizationService {
     private readonly clientService: ClientService,
   ) {}
 
-  public validateRequest(authorizationRequest: AuthorizationRequest) {
-    this.validateResponseType(authorizationRequest.response_type);
-    this.validateScope(authorizationRequest.scope);
+  public async validateRequest(authorizationRequest: AuthorizationRequest) {
+    const client = await this.clientService.getClientById(authorizationRequest.client_id);
+
+    this.validateResponseType(authorizationRequest.response_type, client.responseTypes);
+    this.validateScope(authorizationRequest.scope, client.scopes);
   }
 
-  private validateResponseType(responseType: string) {
+  private validateResponseType(responseType: string, allowedResponseTypesForClient: string[]) {
     const responseTypesSupported = this.providerService.responseTypesSupported;
 
     // Make sure response_type is not missing
@@ -41,9 +43,17 @@ export class AuthorizationService {
         status_code: 400,
       });
     }
+
+    if (!allowedResponseTypesForClient.includes(responseType)) {
+      throw new OIDCError({
+        error: "unauthorized_client",
+        error_description: `Client not allowed to use response_type: ${responseType}`,
+        status_code: 400,
+      });
+    }
   }
 
-  private validateScope(scope: string) {
+  private validateScope(scope: string, allowedScopesForClient: string[]) {
     const scopesSupported = this.providerService.scopesSupported as string[];
 
     if (!scope) {
@@ -82,6 +92,15 @@ export class AuthorizationService {
       throw new OIDCError({
         error: "invalid_scope",
         error_description: `Invalid scope(s): [${invalid.join(", ")}]. Allowed scopes: [${scopesSupported.join(", ")}]`,
+        status_code: 400,
+      });
+    }
+
+    const notAllowedForClient = scopes.filter((scope) => !allowedScopesForClient.includes(scope));
+    if (notAllowedForClient.length > 0) {
+      throw new OIDCError({
+        error: "invalid_scope",
+        error_description: `Client not allowed to request scope(s): [${notAllowedForClient.join(", ")}]`,
         status_code: 400,
       });
     }
