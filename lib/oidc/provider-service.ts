@@ -1,3 +1,4 @@
+import { OIDCError } from "./oidc-error";
 import {
   DiscoveryDocument,
   ProviderConfig,
@@ -22,7 +23,6 @@ import {
   isURLValid,
   normalizeResponseType,
 } from "../utils";
-import { OIDCError } from "./oidc-error";
 
 export class ProviderService {
   constructor(private readonly config: ProviderConfig) {
