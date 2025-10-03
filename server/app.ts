@@ -2,8 +2,9 @@ import { Hono } from "hono";
 import { healthcheckHandler } from "./routes/healthcheck";
 import { onError } from "./middleware/on-error";
 import { ProviderInstance } from "@/lib/oidc/oidc-instance";
-import { auth } from "@/lib/auth";
 import { oidcHandler } from "./routes/oidc";
+import { auth } from "@/lib/auth";
+import { cors } from "hono/cors";
 
 export const $oidc = ProviderInstance.init();
 
@@ -18,6 +19,8 @@ function createApp() {
    * There’s no need to include `/api` because it’s already set as the base path.
    */
   app.on(["POST", "GET", "OPTIONS"], "/auth/**", (c) => auth.handler(c.req.raw));
+
+  app.use(cors());
 
   // Validate oidc configuration first
   app.use("/oidc/.well-known/*", async (_, next) => {

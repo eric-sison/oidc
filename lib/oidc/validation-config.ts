@@ -44,7 +44,7 @@ export const URI_VALIDATION_RULES: Record<
       valid: true,
       required: true,
       httpsOnly: true,
-      noPath: true,
+      noPath: false,
       noFragment: true,
       noQuery: true,
       sameOrigin: false,

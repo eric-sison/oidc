@@ -22,7 +22,7 @@ export class AuthorizationService {
   ) {}
 
   public async validateRequest(authorizationRequest: AuthorizationRequest) {
-    const client = await this.clientService.getClientById(authorizationRequest.client_id);
+    const client = await this.validateClient(authorizationRequest.client_id);
 
     this.validateResponseType(authorizationRequest.response_type, client.responseTypes);
     this.validateScope(authorizationRequest.scope, client.scopes);
@@ -32,6 +32,22 @@ export class AuthorizationService {
     this.validateNonce(authorizationRequest.nonce, authorizationRequest.response_type);
     this.validatePrompt(authorizationRequest.prompt);
     this.validatePKCE(authorizationRequest.code_challenge, authorizationRequest.code_challenge_method);
+  }
+
+  private async validateClient(clientId: string | undefined) {
+    if (!clientId) {
+      throw new OIDCError({
+        error: "invalid_request",
+        error_description: "client_id is missing",
+        status_code: 400,
+      });
+    }
+
+    const client = await this.clientService.getClientById(clientId);
+
+    // TODO: Check for client_secret
+
+    return client;
   }
 
   private validateResponseType(responseType: string, allowedResponseTypesForClient: string[]) {
@@ -194,15 +210,6 @@ export class AuthorizationService {
       });
     }
 
-    // Make sure state does not contain any special characters - just alphanumeric
-    if (!/^[A-Za-z0-9]+$/.test(state)) {
-      throw new OIDCError({
-        error: "invalid_request",
-        error_description: "state value is not valid",
-        status_code: 400,
-      });
-    }
-
     // Make sure state does not exceed 1024 characters - to prevent abuse
     if (state.length > 1024) {
       throw new OIDCError({
@@ -256,15 +263,6 @@ export class AuthorizationService {
     }
 
     if (nonce) {
-      const nonceRegex = /^[A-Za-z0-9]+$/;
-      if (!nonceRegex.test(nonce)) {
-        throw new OIDCError({
-          error: "invalid_request",
-          error_description: "invalid nonce format - must be alphanumeric only",
-          status_code: 400,
-        });
-      }
-
       if (nonce.length > 255) {
         throw new OIDCError({
           error: "invalid_request",

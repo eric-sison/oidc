@@ -15,11 +15,11 @@ export class ProviderInstance {
     const env = createEnv();
 
     const config = new ProviderConfigBuilder()
-      .withIssuer(env.BETTER_AUTH_URL)
-      .withAuthorizationEndpoint(`${env.BETTER_AUTH_URL}/api/oidc/authorize`)
-      .withTokenEndpoint(`${env.BETTER_AUTH_URL}/api/oidc/token`)
-      .withJwksUri(`${env.BETTER_AUTH_URL}/api/oidc/.well-known/jwks.json`)
-      .withUserinfoEndpoint(`${env.BETTER_AUTH_URL}/api/oidc/userinfo`)
+      .withIssuer(`${env.BETTER_AUTH_URL}`)
+      .withAuthorizationEndpoint(`${env.BETTER_AUTH_URL}/authorize`)
+      .withTokenEndpoint(`${env.BETTER_AUTH_URL}/token`)
+      .withJwksUri(`${env.BETTER_AUTH_URL}/.well-known/jwks.json`)
+      .withUserinfoEndpoint(`${env.BETTER_AUTH_URL}/userinfo`)
       .withResponseTypesSupported(["code", "code id_token", "id_token"])
       .withSubjectTypesSupported(["public", "pairwise"])
       .withIdTokenSigningAlgValuesSupported(["RS256", "ES256"])
