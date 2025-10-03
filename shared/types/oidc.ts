@@ -326,8 +326,10 @@ export type AuthorizationRequest = {
   client_id: string;
   scope: string; // must include "openid"
   redirect_uri: string;
-  state?: string; // Required if response_type includes "id_token" or "token"
+  state: string;
   response_mode?: ResponseModesSupported;
   nonce?: string;
   prompt?: string;
+  code_challenge?: string;
+  code_challenge_method?: string;
 };

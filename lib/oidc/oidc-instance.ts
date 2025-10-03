@@ -28,7 +28,7 @@ export class ProviderInstance {
       .withGrantTypesSupported(["authorization_code", "refresh_token"])
       .withTokenEndpointAuthMethodsSupported(["client_secret_basic", "client_secret_post", "private_key_jwt"])
       .withClaimsSupported(["sub"])
-      .withCodeChallengeMethodsSupported(["S256", "plain"])
+      .withCodeChallengeMethodsSupported(["S256"])
       .build();
 
     this.providerService = new ProviderService(config);
