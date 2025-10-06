@@ -4,12 +4,14 @@ import { ProviderService } from "@/lib/oidc/provider-service";
 import { AuthorizationService } from "./authorization";
 import { ClientService } from "./client-service";
 import { FlowService } from "./flow-service";
+import { AuthorizationValidatorService } from "./authorization-validator";
 
 export class ProviderInstance {
   private static instance: ProviderInstance;
 
   private readonly providerService: ProviderService;
   private readonly clientService: ClientService;
+  private readonly authorizationValidatorService: AuthorizationValidatorService;
   private readonly authorizationService: AuthorizationService;
   private readonly flowService: FlowService;
 
@@ -35,7 +37,11 @@ export class ProviderInstance {
 
     this.providerService = new ProviderService(config);
     this.clientService = new ClientService();
-    this.authorizationService = new AuthorizationService(this.providerService, this.clientService);
+    this.authorizationValidatorService = new AuthorizationValidatorService(
+      this.providerService,
+      this.clientService,
+    );
+    this.authorizationService = new AuthorizationService(this.authorizationValidatorService);
     this.flowService = new FlowService(this.authorizationService);
   }
 
