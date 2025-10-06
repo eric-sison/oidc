@@ -333,3 +333,12 @@ export type AuthorizationRequest = {
   code_challenge?: string;
   code_challenge_method?: string;
 };
+
+export type AuthorizationCodePayload = {
+  client_id: string;
+  user_id: string;
+  redirect_uri: string;
+  code_challenge?: string;
+  code_challenge_method?: string;
+  scope: string[];
+};

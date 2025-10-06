@@ -6,7 +6,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  isActive: boolean("is_active").notNull(),
+  isActive: boolean("is_active").default(true),
   givenName: text("given_name").notNull(),
   familyName: text("family_name").notNull(),
   middleName: text("middle_name"),
@@ -46,8 +46,8 @@ export const sessions = pgTable("sessions", {
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  accountId: uuid("account_id").defaultRandom().notNull(),
-  providerId: uuid("provider_id").defaultRandom().notNull(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),

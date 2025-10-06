@@ -15,7 +15,7 @@ export const relyingParties = pgTable(
 
     description: varchar("client_description"),
 
-    secret: text("client_secret").unique().notNull(),
+    secret: text("client_secret").unique(),
 
     /**
      * URIs the OP can redirect to after auth.

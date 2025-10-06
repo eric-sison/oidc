@@ -24,7 +24,7 @@ function createApp() {
 
   // Validate oidc configuration first
   app.use("/oidc/.well-known/*", async (_, next) => {
-    $oidc.getProvider().validateConfig();
+    $oidc.provider.validateConfig();
     return await next();
   });
 

@@ -16,5 +16,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  cache:
+    image: redis:7-alpine
+    container_name: oidc_redis
+    restart: always
+    command: ["redis-server"]
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres_data:
+  redis_data:

@@ -123,7 +123,7 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
+    autoSignIn: false,
     requireEmailVerification: false,
     sendResetPassword: async ({ user, url }) => {
       // Add implementation
@@ -152,7 +152,7 @@ export const auth = betterAuth({
     database: {
       generateId: false, // Handle the generation of ID's manually.
     },
-    cookiePrefix: "erp",
+    cookiePrefix: "ssid",
   },
 });
 
