@@ -1,12 +1,12 @@
+import { OIDCError } from "./oidc-error";
+import { ProviderService } from "./provider-service";
+import { ClientService } from "./client-service";
 import {
   AuthorizationRequest,
   CodeChallengeMethodsSupported,
   ResponseModesSupported,
   ResponseTypesSupported,
 } from "@/shared/types/oidc";
-import { OIDCError } from "./oidc-error";
-import { ProviderService } from "./provider-service";
-import { ClientService } from "./client-service";
 import {
   containsURIFragment,
   getURIProtocol,
@@ -32,16 +32,29 @@ export class AuthorizationValidatorService {
   ) {}
 
   public async validateRequest(authorizationRequest: AuthorizationRequest) {
-    const client = await this.validateClient(authorizationRequest.client_id);
+    const {
+      client_id,
+      response_type,
+      scope,
+      redirect_uri,
+      state,
+      response_mode,
+      nonce,
+      prompt,
+      code_challenge,
+      code_challenge_method,
+    } = authorizationRequest;
 
-    this.validateResponseType(authorizationRequest.response_type, client.responseTypes);
-    this.validateScope(authorizationRequest.scope, client.scopes);
-    this.validateRedirectUri(authorizationRequest.redirect_uri, client.redirectURIs);
-    this.validateState(authorizationRequest.state);
-    this.validateResponseMode(authorizationRequest.response_mode, authorizationRequest.response_type);
-    this.validateNonce(authorizationRequest.nonce, authorizationRequest.response_type);
-    this.validatePrompt(authorizationRequest.prompt);
-    this.validatePKCE(authorizationRequest.code_challenge, authorizationRequest.code_challenge_method);
+    const client = await this.validateClient(client_id);
+
+    this.validateResponseType(response_type, client.responseTypes);
+    this.validateScope(scope, client.scopes);
+    this.validateRedirectUri(redirect_uri, client.redirectURIs);
+    this.validateState(state);
+    this.validateResponseMode(response_mode, response_type);
+    this.validateNonce(nonce, response_type);
+    this.validatePrompt(prompt);
+    this.validatePKCE(code_challenge, code_challenge_method);
   }
 
   // ========== Validation Methods ==========
@@ -55,7 +68,17 @@ export class AuthorizationValidatorService {
       });
     }
 
-    return await this.clientService.getClientById(clientId);
+    const client = await this.clientService.getClientById(clientId);
+
+    if (!client.isActive) {
+      throw new OIDCError({
+        error: "unauthorized_client",
+        error_description: "Client is no longer active",
+        status_code: 400,
+      });
+    }
+
+    return client;
   }
 
   private validateResponseType(responseType: string, allowedResponseTypesForClient: string[]): void {
@@ -141,14 +164,14 @@ export class AuthorizationValidatorService {
     }
   }
 
-  private validateRedirectUri(redirectUri: string | undefined, allowedRedirectUris: string[]): void {
+  private validateRedirectUri(redirectUri: string | undefined, allowedRedirectURIsForClient: string[]): void {
     if (!redirectUri) {
-      this.handleMissingRedirectUri(allowedRedirectUris);
+      this.handleMissingRedirectUri(allowedRedirectURIsForClient);
       return;
     }
 
     this.checkRedirectUriValidity(redirectUri);
-    this.checkRedirectUriRegistration(redirectUri, allowedRedirectUris);
+    this.checkRedirectUriRegistration(redirectUri, allowedRedirectURIsForClient);
   }
 
   private handleMissingRedirectUri(allowedRedirectUris: string[]): void {

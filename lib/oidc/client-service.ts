@@ -50,6 +50,7 @@ export class ClientService {
         grantTypes: relyingParties.grantTypes,
         scopes: relyingParties.scopes,
         tokenEndpointAuthMethod: relyingParties.tokenEndpointAuthMethod,
+        isActive: relyingParties.isActive,
         clientURI: relyingParties.clientURI,
         logoURI: relyingParties.logoURI,
         tosURI: relyingParties.tosURI,

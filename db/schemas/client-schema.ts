@@ -1,5 +1,5 @@
 import { GrantTypesSupported, ResponseTypesSupported, ScopesSupported } from "@/shared/types/oidc";
-import { jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
 import z from "zod";
 
@@ -44,6 +44,8 @@ export const relyingParties = pgTable(
      * @type TokenEndpointAuthMethodSupported
      */
     tokenEndpointAuthMethod: varchar("token_endpoint_auth_methods").default("client_secret_basic").notNull(),
+
+    isActive: boolean("is_active").default(true).notNull(),
 
     /**
      * URL for client homepage

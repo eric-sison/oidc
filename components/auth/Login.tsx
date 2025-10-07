@@ -38,7 +38,7 @@ export const LoginForm: FunctionComponent = () => {
           type="password"
           placeholder="password"
         />
-        <Button onClick={() => mutate()}>Register</Button>
+        <Button onClick={() => mutate()}>Login</Button>
       </div>
     </div>
   );
